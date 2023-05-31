@@ -49,12 +49,68 @@ func ExitHandlerWithArg(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func CheckToken(w http.ResponseWriter, r *http.Request) {
+	cookie, err := r.Cookie("SessionID")
+	if err != nil {
+		w.WriteHeader(http.StatusForbidden)
+		fmt.Fprintf(w, "проверка токена - токен нен найжен")
+		fmt.Println(time.Now(), "проверка токена - токен нен найжен")
+	} else {
+		w.WriteHeader(http.StatusOK)
+		var cookievalue = cookie.Value
+		w.Write([]byte(cookievalue))
+		fmt.Println(time.Now(), "проверка токена", cookievalue)
+	}
+
+}
+
+func GetToken(w http.ResponseWriter, r *http.Request) {
+	cookie := http.Cookie{Name: "SessionID", Value: "123", Path: "/", MaxAge: 0, HttpOnly: true}
+	http.SetCookie(w, &cookie)
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintf(w, "выдача токена: имя - %s | значение - %s", cookie.Name, cookie.Value)
+	fmt.Println(time.Now(), "выдача токена", cookie)
+}
+
+func DeleteToken(w http.ResponseWriter, r *http.Request) {
+	// cookie, err := r.Cookie("SessionID")
+	// if err != nil {
+	// 	w.WriteHeader(http.StatusForbidden)
+	// 	fmt.Fprintf(w, "удаление токена - токен нен найжен")
+	// 	fmt.Println(time.Now(), "удаление токена - токен нен найжен")
+	// } else {
+	cookie := http.Cookie{
+		Name:       "SessionID",
+		Value:      "deleted",
+		Path:       "/",
+		Domain:     "",
+		Expires:    time.Now(),
+		RawExpires: "",
+		MaxAge:     -1,
+		Secure:     false,
+		HttpOnly:   true,
+	}
+	http.SetCookie(w, &cookie)
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintf(w, "выдача токена: имя - %s | значение - %s", cookie.Name, cookie.Value)
+	fmt.Println(time.Now(), "выдача токена", cookie)
+	// cookie.Value = "Unuse"
+	// cookie.Expires = time.Now()
+	// w.WriteHeader(http.StatusOK)
+	// fmt.Fprintf(w, "удаление токена")
+	// fmt.Println(time.Now(), "удаление токена")
+	// }
+}
+
 func main() {
 	router := mux.NewRouter()
 	router.HandleFunc("/", HomeHandler)
 	router.HandleFunc("/{args}", HomeHandlerWithArg)
 	router.HandleFunc("/exit/", ExitHandler)
 	router.HandleFunc("/exit/{pass:[0-9]+}", ExitHandlerWithArg)
+	router.HandleFunc("/token/", CheckToken)
+	router.HandleFunc("/token/get/", GetToken)
+	router.HandleFunc("/token/delete/", DeleteToken)
 	// http.Handle("/", router)
 	log.Fatal(http.ListenAndServe(":8000", router))
 }
